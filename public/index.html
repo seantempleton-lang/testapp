@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postgres Browser</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="sidebar__header">
+          <p class="eyebrow">Postgres explorer</p>
+          <h1>Schema map</h1>
+          <p class="muted">Browse structure, inspect tables, and run read-only SQL from one workspace.</p>
+        </div>
+        <div class="status" id="connection-status">Connecting…</div>
+        <div class="schema-list" id="schema-list"></div>
+      </aside>
+
+      <main class="main">
+        <section class="panel panel--hero">
+          <div>
+            <p class="eyebrow">Workspace</p>
+            <h2>Inspect your database without leaving the browser.</h2>
+          </div>
+          <div class="hero-meta">
+            <div>
+              <span class="meta-label">Preview limit</span>
+              <strong>100 rows</strong>
+            </div>
+            <div>
+              <span class="meta-label">Query mode</span>
+              <strong>Read only</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="workspace">
+          <div class="workspace__left">
+            <section class="panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Selected table</p>
+                  <h3 id="table-title">Choose a table</h3>
+                </div>
+                <button id="refresh-table" class="button button--ghost" type="button">Refresh preview</button>
+              </div>
+              <div id="table-columns" class="column-list muted">Select a table from the schema list to load its columns and sample rows.</div>
+              <div id="table-preview" class="table-wrap"></div>
+            </section>
+          </div>
+
+          <div class="workspace__right">
+            <section class="panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">SQL runner</p>
+                  <h3>Read-only query console</h3>
+                </div>
+                <button id="run-query" class="button" type="button">Run query</button>
+              </div>
+              <label class="sr-only" for="sql-input">SQL query</label>
+              <textarea id="sql-input" spellcheck="false">select table_schema, table_name
+from information_schema.tables
+where table_schema not in ('pg_catalog', 'information_schema')
+order by table_schema, table_name;</textarea>
+              <p class="muted">Allowed statements: <code>SELECT</code>, <code>WITH</code>, <code>SHOW</code>, and <code>EXPLAIN</code>.</p>
+              <div id="query-meta" class="muted"></div>
+              <div id="query-results" class="table-wrap"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="table-template">
+      <table>
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </template>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

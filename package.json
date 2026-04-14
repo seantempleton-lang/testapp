@@ -1,0 +1,15 @@
+{
+  "name": "postgres-browser-test-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A small web app for browsing Postgres schemas, tables, and query results.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.20.0"
+  }
+}
