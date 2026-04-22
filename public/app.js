@@ -1,6 +1,8 @@
 const schemaListEl = document.getElementById("schema-list");
 const connectionStatusEl = document.getElementById("connection-status");
 const tableTitleEl = document.getElementById("table-title");
+const tableViewTitleEl = document.getElementById("table-view-title");
+const tableMetaEl = document.getElementById("table-meta");
 const tableColumnsEl = document.getElementById("table-columns");
 const tablePreviewEl = document.getElementById("table-preview");
 const refreshTableButton = document.getElementById("refresh-table");
@@ -8,12 +10,17 @@ const sqlInputEl = document.getElementById("sql-input");
 const runQueryButton = document.getElementById("run-query");
 const queryMetaEl = document.getElementById("query-meta");
 const queryResultsEl = document.getElementById("query-results");
+const queryViewButton = document.getElementById("query-view-button");
+const tableViewButton = document.getElementById("table-view-button");
+const queryWorkspaceEl = document.getElementById("query-workspace");
+const tableWorkspaceEl = document.getElementById("table-workspace");
 const tableTemplate = document.getElementById("table-template");
 
 const state = {
   schema: null,
   table: null,
   schemas: [],
+  mode: "query",
 };
 
 refreshTableButton.addEventListener("click", () => {
@@ -23,6 +30,8 @@ refreshTableButton.addEventListener("click", () => {
 });
 
 runQueryButton.addEventListener("click", runQuery);
+queryViewButton.addEventListener("click", () => setMode("query"));
+tableViewButton.addEventListener("click", () => setMode("table"));
 
 bootstrap().catch((error) => {
   setStatus(`Connection failed: ${error.message}`, "error");
@@ -37,10 +46,14 @@ async function bootstrap() {
   state.schemas = schemaPayload.schemas;
   setStatus(`Connected to ${health.database} at ${new Date(health.server_time).toLocaleString()}`, "ready");
   renderSchema(state.schemas);
+  setMode("query");
 
   const firstTable = state.schemas.flatMap((item) => item.tables.map((table) => [item.name, table.name]))[0];
   if (firstTable) {
     await loadTablePreview(firstTable[0], firstTable[1]);
+  } else {
+    queryResultsEl.innerHTML = '<div class="empty-state">No tables were found in this database.</div>';
+    tablePreviewEl.innerHTML = '<div class="empty-state">No tables were found in this database.</div>';
   }
 }
 
@@ -66,7 +79,12 @@ function renderSchema(schemas) {
       button.dataset.schema = schema.name;
       button.dataset.table = table.name;
       button.innerHTML = `<strong>${table.name}</strong><small>${table.columns.length} columns</small>`;
-      button.addEventListener("click", () => loadTablePreview(schema.name, table.name));
+      button.addEventListener("click", async () => {
+        await loadTablePreview(schema.name, table.name);
+        if (state.mode === "table") {
+          setMode("table");
+        }
+      });
       group.appendChild(button);
     }
 
@@ -79,8 +97,11 @@ async function loadTablePreview(schema, table) {
   state.table = table;
   markActiveTable(schema, table);
 
-  tableTitleEl.textContent = `${schema}.${table}`;
-  tablePreviewEl.innerHTML = '<div class="empty-state">Loading preview…</div>';
+  const tableLabel = `${schema}.${table}`;
+  tableTitleEl.textContent = tableLabel;
+  tableViewTitleEl.textContent = tableLabel;
+  tableMetaEl.textContent = "Loading table preview...";
+  tablePreviewEl.innerHTML = '<div class="empty-state">Loading preview...</div>';
 
   const currentTable = state.schemas
     .find((item) => item.name === schema)
@@ -89,6 +110,7 @@ async function loadTablePreview(schema, table) {
   renderColumns(currentTable?.columns || []);
 
   const preview = await fetchJson(`/api/table/${encodeURIComponent(schema)}/${encodeURIComponent(table)}?limit=100`);
+  tableMetaEl.textContent = `${preview.rowCount} rows returned in preview mode.`;
   renderTable(tablePreviewEl, preview.columns, preview.rows, `${preview.rowCount} rows returned`);
 
   sqlInputEl.value = `select *\nfrom "${schema}"."${table}"\nlimit 100;`;
@@ -105,14 +127,14 @@ function renderColumns(columns) {
   for (const column of columns) {
     const pill = document.createElement("div");
     pill.className = "column-pill";
-    pill.innerHTML = `<strong>${column.name}</strong><span>${column.dataType}${column.nullable ? "" : " • not null"}</span>`;
+    pill.innerHTML = `<strong>${column.name}</strong><span>${column.dataType}${column.nullable ? "" : " | not null"}</span>`;
     tableColumnsEl.appendChild(pill);
   }
 }
 
 async function runQuery() {
   runQueryButton.disabled = true;
-  queryMetaEl.textContent = "Running query…";
+  queryMetaEl.textContent = "Running query...";
 
   try {
     const payload = await fetchJson("/api/query", {
@@ -140,7 +162,6 @@ function renderTable(target, columns, rows, captionText = "") {
   }
 
   const fragment = tableTemplate.content.cloneNode(true);
-  const table = fragment.querySelector("table");
   const thead = fragment.querySelector("thead");
   const tbody = fragment.querySelector("tbody");
 
@@ -171,7 +192,7 @@ function renderTable(target, columns, rows, captionText = "") {
     }
   }
 
-  target.appendChild(table);
+  target.appendChild(fragment);
 }
 
 function markActiveTable(schema, table) {
@@ -179,6 +200,17 @@ function markActiveTable(schema, table) {
     const isActive = button.dataset.schema === schema && button.dataset.table === table;
     button.classList.toggle("is-active", isActive);
   }
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  const showQuery = mode === "query";
+  queryWorkspaceEl.classList.toggle("is-hidden", !showQuery);
+  tableWorkspaceEl.classList.toggle("is-hidden", showQuery);
+  queryViewButton.classList.toggle("is-selected", showQuery);
+  tableViewButton.classList.toggle("is-selected", !showQuery);
+  queryViewButton.classList.toggle("button--ghost", !showQuery);
+  tableViewButton.classList.toggle("button--ghost", showQuery);
 }
 
 function setStatus(message, stateName) {

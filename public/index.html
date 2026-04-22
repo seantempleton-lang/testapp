@@ -17,65 +17,66 @@
       <aside class="sidebar">
         <div class="sidebar__header">
           <p class="eyebrow">Postgres explorer</p>
-          <h1>Schema map</h1>
-          <p class="muted">Browse structure, inspect tables, and run read-only SQL from one workspace.</p>
+          <h1>Databases</h1>
         </div>
-        <div class="status" id="connection-status">Connecting…</div>
+        <div class="status" id="connection-status">Connecting...</div>
         <div class="schema-list" id="schema-list"></div>
       </aside>
 
       <main class="main">
-        <section class="panel panel--hero">
-          <div>
-            <p class="eyebrow">Workspace</p>
-            <h2>Inspect your database without leaving the browser.</h2>
+        <section class="toolbar">
+          <div class="toolbar__title">
+            <p class="eyebrow">Selected object</p>
+            <h2 id="table-title">Choose a table</h2>
           </div>
-          <div class="hero-meta">
-            <div>
-              <span class="meta-label">Preview limit</span>
-              <strong>100 rows</strong>
-            </div>
-            <div>
-              <span class="meta-label">Query mode</span>
-              <strong>Read only</strong>
-            </div>
+          <div class="toolbar__actions">
+            <button id="query-view-button" class="button is-selected" type="button">Query view</button>
+            <button id="table-view-button" class="button button--ghost" type="button">Table view</button>
+            <button id="refresh-table" class="button button--ghost" type="button">Refresh</button>
           </div>
         </section>
 
-        <section class="workspace">
-          <div class="workspace__left">
-            <section class="panel">
-              <div class="section-heading">
-                <div>
-                  <p class="eyebrow">Selected table</p>
-                  <h3 id="table-title">Choose a table</h3>
-                </div>
-                <button id="refresh-table" class="button button--ghost" type="button">Refresh preview</button>
+        <section id="query-workspace" class="workspace workspace--query">
+          <section class="panel panel--editor">
+            <div class="panel__header">
+              <div>
+                <p class="eyebrow">SQL</p>
+                <h3>Query window</h3>
               </div>
-              <div id="table-columns" class="column-list muted">Select a table from the schema list to load its columns and sample rows.</div>
-              <div id="table-preview" class="table-wrap"></div>
-            </section>
-          </div>
-
-          <div class="workspace__right">
-            <section class="panel">
-              <div class="section-heading">
-                <div>
-                  <p class="eyebrow">SQL runner</p>
-                  <h3>Read-only query console</h3>
-                </div>
-                <button id="run-query" class="button" type="button">Run query</button>
-              </div>
-              <label class="sr-only" for="sql-input">SQL query</label>
-              <textarea id="sql-input" spellcheck="false">select table_schema, table_name
+              <button id="run-query" class="button" type="button">Run query</button>
+            </div>
+            <label class="sr-only" for="sql-input">SQL query</label>
+            <textarea id="sql-input" spellcheck="false">select table_schema, table_name
 from information_schema.tables
 where table_schema not in ('pg_catalog', 'information_schema')
 order by table_schema, table_name;</textarea>
-              <p class="muted">Allowed statements: <code>SELECT</code>, <code>WITH</code>, <code>SHOW</code>, and <code>EXPLAIN</code>.</p>
+            <p class="muted">Allowed statements: <code>SELECT</code>, <code>WITH</code>, <code>SHOW</code>, and <code>EXPLAIN</code>.</p>
+          </section>
+
+          <section class="panel panel--results">
+            <div class="panel__header">
+              <div>
+                <p class="eyebrow">Results</p>
+                <h3>Query results</h3>
+              </div>
               <div id="query-meta" class="muted"></div>
-              <div id="query-results" class="table-wrap"></div>
-            </section>
-          </div>
+            </div>
+            <div id="query-results" class="table-wrap"></div>
+          </section>
+        </section>
+
+        <section id="table-workspace" class="workspace workspace--table is-hidden">
+          <section class="panel panel--table">
+            <div class="panel__header">
+              <div>
+                <p class="eyebrow">Table view</p>
+                <h3 id="table-view-title">Choose a table</h3>
+              </div>
+              <div id="table-meta" class="muted">Select a table from the left to inspect its structure and rows.</div>
+            </div>
+            <div id="table-columns" class="column-list muted">Select a table from the schema tree to load its columns and sample rows.</div>
+            <div id="table-preview" class="table-wrap"></div>
+          </section>
         </section>
       </main>
     </div>
