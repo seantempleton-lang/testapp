@@ -20,7 +20,8 @@ const state = {
   schema: null,
   table: null,
   schemas: [],
-  mode: "query",
+  mode: "table",
+  expandedSchemas: new Set(),
 };
 
 refreshTableButton.addEventListener("click", () => {
@@ -44,9 +45,10 @@ async function bootstrap() {
   ]);
 
   state.schemas = schemaPayload.schemas;
+  state.expandedSchemas = new Set(state.schemas.map((schema) => schema.name));
   setStatus(`Connected to ${health.database} at ${new Date(health.server_time).toLocaleString()}`, "ready");
   renderSchema(state.schemas);
-  setMode("query");
+  setMode("table");
 
   const firstTable = state.schemas.flatMap((item) => item.tables.map((table) => [item.name, table.name]))[0];
   if (firstTable) {
@@ -68,26 +70,48 @@ function renderSchema(schemas) {
   for (const schema of schemas) {
     const group = document.createElement("section");
     group.className = "schema-group";
+    group.dataset.schema = schema.name;
 
-    const title = document.createElement("h4");
-    title.textContent = schema.name;
-    group.appendChild(title);
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "schema-toggle";
+    toggle.dataset.schema = schema.name;
+    toggle.setAttribute("aria-expanded", String(state.expandedSchemas.has(schema.name)));
+    toggle.innerHTML = `
+      <span class="schema-toggle__chevron">${state.expandedSchemas.has(schema.name) ? "▾" : "▸"}</span>
+      <span class="schema-toggle__icon" aria-hidden="true"></span>
+      <span class="schema-toggle__label">${schema.name}</span>
+      <span class="schema-toggle__count">${schema.tables.length}</span>
+    `;
+    toggle.addEventListener("click", () => {
+      toggleSchema(schema.name);
+    });
+    group.appendChild(toggle);
+
+    const children = document.createElement("div");
+    children.className = "schema-children";
+    children.classList.toggle("is-collapsed", !state.expandedSchemas.has(schema.name));
 
     for (const table of schema.tables) {
       const button = document.createElement("button");
       button.type = "button";
+      button.className = "tree-item";
       button.dataset.schema = schema.name;
       button.dataset.table = table.name;
-      button.innerHTML = `<strong>${table.name}</strong><small>${table.columns.length} columns</small>`;
+      button.innerHTML = `
+        <span class="tree-item__icon" aria-hidden="true"></span>
+        <span class="tree-item__text">
+          <strong>${table.name}</strong>
+          <small>${table.columns.length} columns</small>
+        </span>
+      `;
       button.addEventListener("click", async () => {
         await loadTablePreview(schema.name, table.name);
-        if (state.mode === "table") {
-          setMode("table");
-        }
       });
-      group.appendChild(button);
+      children.appendChild(button);
     }
 
+    group.appendChild(children);
     schemaListEl.appendChild(group);
   }
 }
@@ -196,9 +220,22 @@ function renderTable(target, columns, rows, captionText = "") {
 }
 
 function markActiveTable(schema, table) {
-  for (const button of schemaListEl.querySelectorAll("button")) {
+  for (const button of schemaListEl.querySelectorAll(".tree-item")) {
     const isActive = button.dataset.schema === schema && button.dataset.table === table;
     button.classList.toggle("is-active", isActive);
+  }
+}
+
+function toggleSchema(schemaName) {
+  if (state.expandedSchemas.has(schemaName)) {
+    state.expandedSchemas.delete(schemaName);
+  } else {
+    state.expandedSchemas.add(schemaName);
+  }
+
+  renderSchema(state.schemas);
+  if (state.schema && state.table) {
+    markActiveTable(state.schema, state.table);
   }
 }
 
