@@ -33,6 +33,24 @@ A small Node.js web app for exploring a Postgres database from the browser. It s
 
 5. Open [http://localhost:3000](http://localhost:3000)
 
+## Docker
+
+This repo now includes a [Dockerfile](C:\Users\SeanTempleton\OneDrive - McMillan Drilling Ltd\Documents\GitHub\testapp\Dockerfile) so Coolify can be configured as a Dockerfile build.
+
+Build locally:
+
+```powershell
+docker build -t postgres-browser-test-app .
+```
+
+Run locally:
+
+```powershell
+docker run --rm -p 3000:3000 --env-file .env postgres-browser-test-app
+```
+
+For Coolify, choose the Dockerfile build option and point it at the repository root. Set your runtime environment variables in Coolify, especially `DATABASE_URL` and, if needed, `PGSSLMODE=require`.
+
 ## Environment
 
 - `PORT`: local web server port
