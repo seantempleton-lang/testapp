@@ -13,6 +13,19 @@ const pool = new Pool(buildPgConfig());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get("/healthz", (_req, res) => {
+  res.json({ ok: true, status: "alive" });
+});
+
+app.get("/readyz", async (_req, res) => {
+  try {
+    await pool.query("select 1 as ok");
+    res.json({ ok: true, status: "ready" });
+  } catch (error) {
+    res.status(500).json({ ok: false, status: "not_ready", error: formatError(error) });
+  }
+});
+
 app.get("/api/health", async (_req, res) => {
   try {
     const result = await pool.query("select current_database() as database, now() as server_time");

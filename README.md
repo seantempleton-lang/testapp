@@ -51,6 +51,12 @@ docker run --rm -p 3000:3000 --env-file .env postgres-browser-test-app
 
 For Coolify, choose the Dockerfile build option and point it at the repository root. Set your runtime environment variables in Coolify, especially `DATABASE_URL` and, if needed, `PGSSLMODE=require`.
 
+## Health Checks
+
+- `GET /healthz`: liveness check for the web process
+- `GET /readyz`: readiness check that confirms the app can reach Postgres
+- `GET /api/health`: detailed database health payload with database name and server time
+
 ## Environment
 
 - `PORT`: local web server port
